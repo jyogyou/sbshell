@@ -22,7 +22,7 @@ Sbshell 是一款针对 官方sing-box 的辅助运行脚本，旨在让官方si
 
 ## 一键脚本：(请自行安装curl和bash，如果缺少的话)
 ```
-bash <(curl -sL https://ghfast.top/https://raw.githubusercontent.com/qljsyph/sbshell/refs/heads/main/sbshall.sh)
+bash <(curl -sL https://ghfast.top/https://raw.githubusercontent.com/jyogyou/sbshell/refs/heads/main/sbshall.sh)
 ```
 - 初始化运行结束，输入“**sb**”进入菜单
 - 目前支持系统为deiban/ubuntu/armbian/openwrt。  
@@ -41,24 +41,23 @@ bash <(curl -sL https://gh-proxy.com/https://raw.githubusercontent.com/qljsyph/D
 
 ### 发行版1.12:
 fakeiptrpoxy:
-https://raw.githubusercontent.com/qljsyph/sbshell/refs/heads/main/config_template/config_fakeiptrpoxy12.json
+https://raw.githubusercontent.com/jyogyou/sbshell/refs/heads/main/config_template/config_fakeiptrpoxy12.json
 
 fakeiptun:
-https://raw.githubusercontent.com/qljsyph/sbshell/refs/heads/main/config_template/config_fakeiptun12.json
+https://raw.githubusercontent.com/jyogyou/sbshell/refs/heads/main/config_template/config_fakeiptun12.json
 
 tproxy:
-https://raw.githubusercontent.com/qljsyph/sbshell/refs/heads/main/config_template/config_trpoxy12.json
+https://raw.githubusercontent.com/jyogyou/sbshell/refs/heads/main/config_template/config_trpoxy12.json
 
 ### 发行版1.11：  
 tproxy：  
-https://gh-proxy.com/https://raw.githubusercontent.com/qljsyph/sbshell/refs/heads/main/config_template/config_tproxy.json  
+https://gh-proxy.com/https://raw.githubusercontent.com/jyogyou/sbshell/refs/heads/main/config_template/config_tproxy.json  
 
 tun：  
-https://gh-proxy.com/https://raw.githubusercontent.com/qljsyph/sbshell/refs/heads/main/config_template/config_tun.json  
+https://gh-proxy.com/https://raw.githubusercontent.com/jyogyou/sbshell/refs/heads/main/config_template/config_tun.json  
 
 ## 其他问题：
 
 **请查看[wiki](https://github.com/qljsyph/sbshell/wiki)**  
 **网络优化功能不懂的不要使用会影响游戏性**
-
 
