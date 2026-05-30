@@ -12,14 +12,36 @@ else
     echo "sing-box 未安装"
 fi
 
-ipv4_forward=$(sysctl net.ipv4.ip_forward | awk '{print $3}')
-ipv6_forward=$(sysctl net.ipv6.conf.all.forwarding | awk '{print $3}')
+FORWARD_CONF="/etc/sysctl.d/99-sbshell-forward.conf"
 
-if [ "$ipv4_forward" -eq 1 ] && [ "$ipv6_forward" -eq 1 ]; then
-    echo "IP 转发已开启"
-else
+ensure_ip_forwarding() {
+    local ipv4_forward
+    local ipv6_forward
+
+    mkdir -p "$(dirname "$FORWARD_CONF")"
+    cat > "$FORWARD_CONF" <<EOF
+net.ipv4.ip_forward=1
+net.ipv6.conf.all.forwarding=1
+EOF
+
+    ipv4_forward=$(sysctl -n net.ipv4.ip_forward 2>/dev/null || echo 0)
+    ipv6_forward=$(sysctl -n net.ipv6.conf.all.forwarding 2>/dev/null || echo 1)
+
+    if [ "$ipv4_forward" -eq 1 ] && [ "$ipv6_forward" -eq 1 ]; then
+        echo "IP 转发已开启，持久化配置已确认"
+        return
+    fi
+
     echo "开启 IP 转发..."
-    sudo sed -i '/net.ipv4.ip_forward/s/^#//;/net.ipv6.conf.all.forwarding/s/^#//' /etc/sysctl.conf
-    sudo sysctl -p
+    if sysctl -n net.ipv4.ip_forward >/dev/null 2>&1; then
+        sysctl -w net.ipv4.ip_forward=1 >/dev/null
+    fi
+    if sysctl -n net.ipv6.conf.all.forwarding >/dev/null 2>&1; then
+        sysctl -w net.ipv6.conf.all.forwarding=1 >/dev/null
+    fi
+
+    sysctl -p "$FORWARD_CONF" >/dev/null 2>&1 || true
     echo "IP 转发已成功开启"
-fi
+}
+
+ensure_ip_forwarding

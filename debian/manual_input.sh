@@ -6,11 +6,20 @@ RED='\033[0;31m'
 NC='\033[0m' # 无颜色
 
 # 手动输入的配置文件
-MANUAL_FILE="/etc/sing-box/manual.conf"
-DEFAULTS_FILE="/etc/sing-box/defaults.conf"
+CONFIG_DIR="${SBSHELL_CONFIG_DIR:-/etc/sing-box}"
+CONFIG_FILE="${CONFIG_DIR}/config.json"
+MANUAL_FILE="${CONFIG_DIR}/manual.conf"
+DEFAULTS_FILE="${CONFIG_DIR}/defaults.conf"
+MODE_FILE="${CONFIG_DIR}/mode.conf"
+
+if [ -f "$CONFIG_FILE" ]; then
+    echo -e "${CYAN}配置文件已存在: $CONFIG_FILE${NC}"
+    echo -e "${CYAN}为避免覆盖现有配置，已跳过生成配置文件。需要更新时请使用手动更新功能。${NC}"
+    exit 0
+fi
 
 # 获取当前模式
-MODE=$(grep -oP '(?<=^MODE=).*' /etc/sing-box/mode.conf)
+MODE=$(grep -oP '(?<=^MODE=).*' "$MODE_FILE")
 
 # 提示用户输入参数的函数
 prompt_user_input() {
@@ -71,9 +80,9 @@ EOF
 
         while true; do
             # 下载并验证配置文件
-            if curl -L --connect-timeout 10 --max-time 30 "$FULL_URL" -o /etc/sing-box/config.json; then
+            if curl -L --connect-timeout 10 --max-time 30 "$FULL_URL" -o "$CONFIG_FILE"; then
                 echo "配置文件下载完成，并验证成功！"
-                if ! sing-box check -c /etc/sing-box/config.json; then
+                if ! sing-box check -c "$CONFIG_FILE"; then
                     echo "配置文件验证失败"
                     exit 1
                 fi

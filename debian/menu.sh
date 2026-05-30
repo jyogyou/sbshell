@@ -20,7 +20,7 @@ NC='\033[0m'
 SCRIPT_DIR="/etc/sing-box/scripts"
 INITIALIZED_FILE="$SCRIPT_DIR/.initialized"
 ROLE_FILE="$SCRIPT_DIR/.role"
-BASE_URL="https://ghfast.top/https://raw.githubusercontent.com/qljsyph/sbshell/refs/heads/main/debian"
+BASE_URL="https://ghfast.top/https://raw.githubusercontent.com/jyogyou/sbshell/refs/heads/main/debian"
 ROLE="" # 运行角色: client 或 server
 
 # 脚本功能列表，按功能分组
@@ -186,6 +186,7 @@ client_initialize() {
 server_initialize() {
     echo -e "${CYAN}--- 开始服务端初始化 ---${NC}"
     prepare_scripts || exit 1
+    run_script "检查系统环境" "check_environment.sh" --quiet
     run_script "配置防火墙" "ufw.sh" "--auto"
     run_script "安装/更新 sing-box" "install_singbox.sh" --quiet
     run_script "更新服务端配置" "update_config.sh"
