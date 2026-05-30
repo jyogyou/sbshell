@@ -9,6 +9,16 @@ NC='\033[0m' # 无颜色
 
 # 脚本下载目录
 SCRIPT_DIR="/etc/sing-box/scripts"
+MODE_FILE="/etc/sing-box/mode.conf"
+
+read_mode() {
+    if [ ! -f "$MODE_FILE" ]; then
+        echo -e "${RED}模式文件不存在: $MODE_FILE，请先执行模式切换。${NC}" >&2
+        return 1
+    fi
+
+    grep -E '^MODE=' "$MODE_FILE" | head -n 1 | cut -d'=' -f2- | tr -d '\r'
+}
 
 # 检查当前模式
 check_mode() {
@@ -21,12 +31,23 @@ check_mode() {
 
 # 应用防火墙规则
 apply_firewall() {
-    MODE=$(grep -oP '(?<=^MODE=).*' /etc/sing-box/mode.conf)
-    if [ "$MODE" = "TProxy" ]; then
-        bash "$SCRIPT_DIR/configure_tproxy.sh"
-    elif [ "$MODE" = "TUN" ]; then
-        bash "$SCRIPT_DIR/configure_tun.sh"
-    fi
+    local MODE
+    MODE="$(read_mode)" || return 1
+
+    case "$MODE" in
+        TProxy)
+            echo -e "${CYAN}配置 TProxy 防火墙规则...${NC}"
+            bash "$SCRIPT_DIR/configure_tproxy.sh"
+            ;;
+        TUN)
+            echo -e "${CYAN}配置 TUN 防火墙规则...${NC}"
+            bash "$SCRIPT_DIR/configure_tun.sh"
+            ;;
+        *)
+            echo -e "${RED}未知代理模式: ${MODE:-空}，请重新执行模式切换。${NC}" >&2
+            return 1
+            ;;
+    esac
 }
 
 # 启动 sing-box 服务
@@ -54,11 +75,17 @@ start_singbox() {
         echo -e "${CYAN}当前网络环境非代理网络，可以启动 sing-box。${NC}"
     fi
 
-    sudo systemctl restart sing-box &>/dev/null
-    
-    apply_firewall
+    if ! sudo systemctl restart sing-box &>/dev/null; then
+        echo -e "${RED}sing-box 启动失败，请检查日志${NC}"
+        return 1
+    fi
 
     if systemctl is-active --quiet sing-box; then
+        if ! apply_firewall; then
+            echo -e "${RED}防火墙规则应用失败，请检查 nftables、策略路由和模式配置。${NC}"
+            return 1
+        fi
+
         echo -e "${GREEN}sing-box 启动成功${NC}"
         mode=$(check_mode)
         echo -e "${MAGENTA}当前启动模式: ${mode}${NC}"
