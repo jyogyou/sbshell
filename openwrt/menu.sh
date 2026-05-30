@@ -43,6 +43,7 @@ SCRIPTS=(
     "check_config.sh"          # 检查配置文件
     "update_scripts.sh"        # 更新脚本
     "update_ui.sh"             # 控制面板安装/更新/检查
+    "uninstall.sh"             # 卸载并清理残留
     "menu.sh"                  # 主菜单
 )
 
@@ -168,6 +169,7 @@ show_menu() {
     echo -e "${GREEN}8. 常用命令${NC}"
     echo -e "${GREEN}9. 更新脚本${NC}"
     echo -e "${GREEN}10. 更新控制面板${NC}"
+    echo -e "${RED}11. 卸载清理残留${NC}"
     echo -e "${GREEN}0. 退出${NC}"
     echo -e "${CYAN}=======================================${NC}"
 }
@@ -206,6 +208,9 @@ handle_choice() {
             ;;
         10)
             bash "$SCRIPT_DIR/update_ui.sh"
+            ;;
+        11)
+            bash "$SCRIPT_DIR/uninstall.sh"
             ;;
         0)
             exit 0

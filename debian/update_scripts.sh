@@ -95,6 +95,7 @@ SCRIPTS=(
     "check_config.sh"
     "update_scripts.sh"
     "update_ui.sh"
+    "uninstall.sh"
     "delaytest.sh"
     "update_config.sh"
     "setup.sh"

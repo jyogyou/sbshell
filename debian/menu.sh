@@ -31,6 +31,7 @@ SCRIPTS=(
     "check_update.sh"          # 检查 sing-box 更新
     "update_scripts.sh"        # 更新所有管理脚本
     "update_ui.sh"             # 更新 Web 控制面板 (Yacd)
+    "uninstall.sh"             # 卸载并清理残留
 
     # --- 客户端配置 ---
     "manual_input.sh"          # 手动输入订阅链接
@@ -265,6 +266,7 @@ show_client_menu() {
     echo -e "${WHITE}12. 常用命令${NC}"
     echo -e "${WHITE}13. 更换XanMod内核${NC}"
     echo -e "${WHITE}14. 网络优化${NC}"
+    echo -e "${RED}15. 卸载清理残留${NC}"
     echo -e "${CYAN}----------------------------------------------------${NC}"
     echo -e "${GREEN} 0. 退出${NC}"
     echo -e "${CYAN}====================================================${NC}"
@@ -292,6 +294,7 @@ handle_client_choice() {
         12) run_script "常用命令" "commands.sh" ;;
         13) run_script "更换XanMod内核" "kernel.sh" ;;
         14) run_script "网络优化" "optimize.sh" ;;
+        15) run_script "卸载清理残留" "uninstall.sh" ;;
         0) exit 0 ;;
         *) echo -e "${RED}无效的选择${NC}" ;;
     esac
@@ -315,6 +318,7 @@ show_server_menu() {
     echo -e "${WHITE}10. 更换XanMod内核${NC}"
     echo -e "${WHITE}11. 网络优化${NC}"
     echo -e "${WHITE}12. 手动配置防火墙${NC}"
+    echo -e "${RED}13. 卸载清理残留${NC}"
     echo -e "${CYAN}----------------------------------------------------${NC}"
     echo -e "${GREEN} 0. 退出${NC}"
     echo -e "${CYAN}====================================================${NC}"
@@ -340,6 +344,7 @@ handle_server_choice() {
         10) run_script "更换XanMod内核" "kernel.sh" ;;
         11) run_script "网络优化" "optimize.sh" ;;
         12) run_script "手动配置防火墙" "ufw.sh" ;;
+        13) run_script "卸载清理残留" "uninstall.sh" ;;
         0) exit 0 ;;
         *) echo -e "${RED}无效的选择${NC}" ;;
     esac

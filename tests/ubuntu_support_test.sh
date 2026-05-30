@@ -112,7 +112,8 @@ test_static_contracts() {
     assert_contains "$REPO_ROOT/debian/set_network.sh" "/etc/network/interfaces"
     assert_not_contains "$REPO_ROOT/debian/start_singbox.sh" "暂只支持debian"
 
-    if git -C "$REPO_ROOT" grep -n "qljsyph" -- '*.sh' 'README.md' >/tmp/sbshell-url-grep.out; then
+    local bad_owner="qlj""syph"
+    if git -C "$REPO_ROOT" grep -n "$bad_owner" -- '*.sh' 'README.md' ':!tests/*' >/tmp/sbshell-url-grep.out; then
         cat /tmp/sbshell-url-grep.out >&2
         fail "Tracked shell scripts and README should not link to the original author's repository"
     fi
