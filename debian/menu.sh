@@ -209,6 +209,64 @@ select_role() {
     echo "$ROLE" > "$ROLE_FILE"
 }
 
+normalize_role() {
+    local value="$1"
+    case "$value" in
+        client|server)
+            printf '%s' "$value"
+            return 0
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
+load_role_file() {
+    local value=""
+    if [ -s "$ROLE_FILE" ]; then
+        value=$(tr -d '\r\n[:space:]' < "$ROLE_FILE")
+        ROLE=$(normalize_role "$value") && return 0
+    fi
+    return 1
+}
+
+detect_existing_role() {
+    if load_role_file; then
+        printf '%s' "$ROLE"
+        return 0
+    fi
+
+    if [ -f /etc/sing-box/mode.conf ]; then
+        printf 'client'
+        return 0
+    fi
+
+    if [ -f /etc/sing-box/config.url ]; then
+        printf 'server'
+        return 0
+    fi
+
+    if [ -f /etc/sing-box/config.json ] && command -v sing-box >/dev/null 2>&1; then
+        printf 'client'
+        return 0
+    fi
+
+    return 1
+}
+
+recover_existing_install() {
+    local detected_role=""
+
+    detected_role=$(detect_existing_role) || return 1
+    ROLE="$detected_role"
+    echo "$ROLE" > "$ROLE_FILE"
+    touch "$INITIALIZED_FILE"
+    echo -e "${YELLOW}检测到已有安装，已恢复 '$ROLE' 角色并跳过初始化引导。${NC}"
+    check_and_download_scripts
+    return 0
+}
+
 # 初始化检查与执行
 run_initialization() {
     # 首先选择角色
@@ -220,7 +278,8 @@ run_initialization() {
     
     if [[ "$init_choice" =~ ^[Ss]kip$ ]]; then
         echo -e "${CYAN}跳过初始化，仅下载脚本...${NC}"
-        parallel_download_scripts
+        parallel_download_scripts || exit 1
+        touch "$INITIALIZED_FILE"
     else
         if [ "$ROLE" = "server" ]; then
             server_initialize
@@ -365,16 +424,22 @@ main() {
 
     # 检查是否已经初始化过
     if [ ! -f "$INITIALIZED_FILE" ]; then
-        run_initialization
+        if recover_existing_install; then
+            :
+        else
+            run_initialization
+        fi
     else
         # 如果已经初始化，加载角色并检查脚本
-        if [ -f "$ROLE_FILE" ]; then
-            ROLE=$(cat "$ROLE_FILE")
+        if load_role_file; then
+            :
         else
             # 兼容旧版本，如果 .initialized 存在但 .role 不存在
-            echo -e "${YELLOW}角色文件丢失，引导重新初始化。${NC}"
-            sudo rm -f "$INITIALIZED_FILE"
-            run_initialization
+            echo -e "${YELLOW}角色文件丢失，尝试从现有安装恢复。${NC}"
+            if ! recover_existing_install; then
+                rm -f "$INITIALIZED_FILE"
+                run_initialization
+            fi
         fi
         check_and_download_scripts
     fi

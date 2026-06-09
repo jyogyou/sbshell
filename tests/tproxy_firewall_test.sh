@@ -40,6 +40,11 @@ test_debian_tproxy_runs_with_privilege_and_applies_nft() {
     assert_contains "$script" 'exec sudo bash "$0" "$@"'
     assert_contains "$script" "MODE_FILE=\"/etc/sing-box/mode.conf\""
     assert_contains "$script" "cut -d'=' -f2-"
+    assert_contains "$script" "set -euo pipefail"
+    assert_contains "$script" "write_nft_rules()"
+    assert_contains "$script" "validate_nft_rules()"
+    assert_contains "$script" "install_policy_routing()"
+    assert_contains "$script" "replace_nft_rules()"
     assert_contains "$script" "nft -c -f /etc/sing-box/nft/nftables.conf"
     assert_contains "$script" "nft -f /etc/sing-box/nft/nftables.conf"
     assert_contains "$script" "ip -f inet route replace local default"

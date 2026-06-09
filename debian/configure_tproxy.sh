@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -u
+set -euo pipefail
 
 if [ "$(id -u)" -ne 0 ]; then
     if command -v sudo >/dev/null 2>&1; then
@@ -39,58 +39,24 @@ read_mode() {
 # 读取当前模式
 MODE=$(read_mode)
 
-# 检查指定路由表是否存在
-check_route_exists() {
-    ip route show table "$1" >/dev/null 2>&1
-    return $?
-}
-
-# 创建路由表，如果不存在的话
-create_route_table_if_not_exists() {
-    if ! check_route_exists "$PROXY_ROUTE_TABLE"; then
-        echo "路由表不存在，正在创建..."
-        ip route add local default dev "$INTERFACE" table "$PROXY_ROUTE_TABLE" || { echo "创建路由表失败"; exit 1; }
-    fi
-}
-
-# 等待 FIB 表加载完成
-wait_for_fib_table() {
-    i=1
-    while [ $i -le 10 ]; do
-        if ip route show table "$PROXY_ROUTE_TABLE" >/dev/null 2>&1; then
-            return 0
-        fi
-        echo "等待 FIB 表加载中，等待 $i 秒..."
-        i=$((i + 1))
-    done
-    echo "FIB 表加载失败，超出最大重试次数"
-    return 1
-}
-
 # 清理现有 sing-box 防火墙规则
 clearSingboxRules() {
     nft list table inet sing-box >/dev/null 2>&1 && nft delete table inet sing-box
-    while ip -f inet rule del fwmark $PROXY_FWMARK lookup $PROXY_ROUTE_TABLE 2>/dev/null; do :; done
-    ip route flush table $PROXY_ROUTE_TABLE 2>/dev/null
     echo "清理 sing-box 相关的防火墙规则"
 }
 
-# 仅在 TProxy 模式下应用防火墙规则
-if [ "$MODE" = "TProxy" ]; then
-    echo "应用 TProxy 模式下的防火墙规则..."
-
-    # 清理现有规则
-    clearSingboxRules
-
-    # 设置 IP 规则和路由
-    ip -f inet rule add fwmark $PROXY_FWMARK lookup $PROXY_ROUTE_TABLE
+install_policy_routing() {
     ip -f inet route replace local default dev "${INTERFACE}" table $PROXY_ROUTE_TABLE
+    ip -f inet rule add fwmark $PROXY_FWMARK lookup $PROXY_ROUTE_TABLE
     sysctl -w net.ipv4.ip_forward=1 > /dev/null
+}
 
-    # 确保目录存在
-    sudo mkdir -p /etc/sing-box/nft
+dedupe_policy_rules() {
+    while ip -f inet rule del fwmark $PROXY_FWMARK lookup $PROXY_ROUTE_TABLE 2>/dev/null; do :; done
+}
 
-    # 设置 TProxy 模式下的 nftables 规则
+write_nft_rules() {
+    mkdir -p /etc/sing-box/nft
     cat > /etc/sing-box/nft/nftables.conf <<EOF
 table inet sing-box {
     set RESERVED_IPSET {
@@ -154,13 +120,30 @@ table inet sing-box {
     }
 }
 EOF
+}
 
-    # 应用防火墙规则和 IP 路由
+validate_nft_rules() {
     nft -c -f /etc/sing-box/nft/nftables.conf
-    nft -f /etc/sing-box/nft/nftables.conf
+}
 
-    # 持久化防火墙规则
+replace_nft_rules() {
+    clearSingboxRules
+    nft -f /etc/sing-box/nft/nftables.conf
     nft list ruleset > /etc/nftables.conf
+}
+
+# 仅在 TProxy 模式下应用防火墙规则
+if [ "$MODE" = "TProxy" ]; then
+    echo "应用 TProxy 模式下的防火墙规则..."
+
+    # 先生成并校验新规则，避免新规则异常时删除正在工作的旧 nft 表。
+    write_nft_rules
+    validate_nft_rules
+
+    # 路由设置成功后再替换 nft 表。
+    dedupe_policy_rules
+    install_policy_routing
+    replace_nft_rules
 
     echo "TProxy 模式的防火墙规则已应用。"
 else
